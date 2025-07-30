@@ -1,0 +1,139 @@
+<mat-card class="expense-list-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>list</mat-icon>
+      Transações Recentes
+    </mat-card-title>
+    <mat-card-subtitle>Histórico de receitas e despesas</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Filtros -->
+    <div class="filters-section">
+      <div class="filters-row">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Buscar</mat-label>
+          <input 
+            matInput 
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilters()"
+            placeholder="Descrição ou categoria">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Categoria</mat-label>
+          <mat-select 
+            [(ngModel)]="selectedCategory"
+            (selectionChange)="applyFilters()">
+            <mat-option value="">Todas as categorias</mat-option>
+            <mat-option *ngFor="let category of categories" [value]="category.name">
+              <mat-icon [style.color]="category.color">{{ getCategoryIcon(category.name) }}</mat-icon>
+              {{ category.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Tipo</mat-label>
+          <mat-select 
+            [(ngModel)]="selectedType"
+            (selectionChange)="applyFilters()">
+            <mat-option *ngFor="let type of filterOptions.types" [value]="type.value">
+              {{ type.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button 
+          mat-button 
+          color="warn" 
+          (click)="clearFilters()"
+          class="clear-filters-btn">
+          <mat-icon>clear</mat-icon>
+          Limpar
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumo dos filtros -->
+    <div class="filter-summary" *ngIf="filteredExpenses.length > 0">
+      <div class="summary-chips">
+        <mat-chip-set>
+          <mat-chip class="income-chip">
+            <mat-icon>add</mat-icon>
+            Receitas: {{ formatCurrency(getTotalFiltered().income) }}
+          </mat-chip>
+          <mat-chip class="expense-chip">
+            <mat-icon>remove</mat-icon>
+            Despesas: {{ formatCurrency(getTotalFiltered().expense) }}
+          </mat-chip>
+          <mat-chip class="balance-chip" [ngClass]="{'positive': getTotalFiltered().total >= 0, 'negative': getTotalFiltered().total < 0}">
+            <mat-icon>account_balance</mat-icon>
+            Saldo: {{ formatCurrency(getTotalFiltered().total) }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+    </div>
+
+    <!-- Lista de transações -->
+    <div class="expenses-container">
+      <div *ngIf="filteredExpenses.length === 0" class="no-expenses">
+        <mat-icon>inbox</mat-icon>
+        <p>Nenhuma transação encontrada</p>
+        <small>Tente ajustar os filtros ou adicione uma nova transação</small>
+      </div>
+
+      <mat-list *ngIf="filteredExpenses.length > 0" class="expenses-list">
+        <mat-list-item 
+          *ngFor="let expense of filteredExpenses; trackBy: trackByExpense"
+          class="expense-item"
+          [ngClass]="expense.type">
+          
+          <div class="expense-icon" matListItemAvatar>
+            <mat-icon [style.color]="getCategoryColor(expense.category)">
+              {{ getCategoryIcon(expense.category) }}
+            </mat-icon>
+          </div>
+
+          <div class="expense-content" matListItemTitle>
+            <div class="expense-main">
+              <div class="expense-info">
+                <h4 class="expense-description">{{ expense.description }}</h4>
+                <div class="expense-meta">
+                  <span class="expense-category">{{ expense.category }}</span>
+                  <span class="expense-date">{{ formatDate(expense.date) }}</span>
+                  <mat-chip 
+                    class="type-chip"
+                    [ngClass]="expense.type">
+                    <mat-icon>{{ getTypeIcon(expense.type) }}</mat-icon>
+                    {{ expense.type === 'expense' ? 'Despesa' : 'Receita' }}
+                  </mat-chip>
+                </div>
+              </div>
+              
+              <div class="expense-amount" [style.color]="getTypeColor(expense.type)">
+                {{ formatCurrency(expense.amount) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="expense-actions" matListItemMeta>
+            <button 
+              mat-icon-button 
+              [matMenuTriggerFor]="menu"
+              class="actions-btn">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="deleteExpense(expense.id)">
+                <mat-icon color="warn">delete</mat-icon>
+                <span>Excluir</span>
+              </button>
+            </mat-menu>
+          </div>
+        </mat-list-item>
+      </mat-list>
+    </div>
+  </mat-card-content>
+</mat-card>

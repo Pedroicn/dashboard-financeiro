@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regras para coleção de despesas
+    match /expenses/{document} {
+      // Apenas usuários autenticados podem acessar
+      allow read, write: if request.auth != null 
+        // E apenas seus próprios dados (onde userId == uid do usuário)
+        && request.auth.uid == resource.data.userId;
+      
+      // Permitir criação apenas se o userId na criação for o mesmo do usuário autenticado
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Regras para coleção de metas
+    match /goals/{document} {
+      // Apenas usuários autenticados podem acessar
+      allow read, write: if request.auth != null 
+        // E apenas seus próprios dados (onde userId == uid do usuário)
+        && request.auth.uid == resource.data.userId;
+      
+      // Permitir criação apenas se o userId na criação for o mesmo do usuário autenticado
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Regras para coleção de sugestões de IA (futuro)
+    match /ai_suggestions/{document} {
+      // Apenas usuários autenticados podem acessar
+      allow read, write: if request.auth != null 
+        // E apenas seus próprios dados (onde userId == uid do usuário)
+        && request.auth.uid == resource.data.userId;
+      
+      // Permitir criação apenas se o userId na criação for o mesmo do usuário autenticado
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Regras para perfis de usuário (futuro)
+    match /users/{userId} {
+      // Apenas o próprio usuário pode acessar seu perfil
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+  }
+}

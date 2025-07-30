@@ -1,0 +1,27 @@
+<div class="charts-container">
+  <div class="charts-grid">
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Gastos por Categoria</mat-card-title>
+        <mat-card-subtitle>Distribuição dos seus gastos</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-wrapper">
+          <canvas #categoryChart></canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Tendência Mensal</mat-card-title>
+        <mat-card-subtitle>Evolução dos gastos ao longo do tempo</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-wrapper">
+          <canvas #trendChart></canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

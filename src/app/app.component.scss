@@ -1,0 +1,25 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  
+  &.with-navbar {
+    margin-top: 64px; // Altura da navbar
+  }
+}
+
+// Estilos globais da aplicação
+:host ::ng-deep body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: #fafafa;
+}
+
+:host ::ng-deep * {
+  box-sizing: border-box;
+}

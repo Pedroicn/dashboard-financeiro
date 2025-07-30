@@ -1,0 +1,145 @@
+<div class="ai-suggestions-container">
+  <div class="suggestions-header">
+    <div class="header-content">
+      <h2>
+        <mat-icon>psychology</mat-icon>
+        Sugestões de IA
+      </h2>
+      <p>Insights inteligentes para otimizar suas finanças</p>
+    </div>
+    
+    <div class="suggestions-stats" *ngIf="getTotalSuggestions() > 0">
+      <div class="stat-card">
+        <mat-icon>lightbulb</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ getTotalSuggestions() }}</span>
+          <span class="stat-label">Sugestões</span>
+        </div>
+      </div>
+      
+      <div class="stat-card" *ngIf="getTotalPotentialSavings() > 0">
+        <mat-icon>trending_up</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ formatCurrency(getTotalPotentialSavings()) }}</span>
+          <span class="stat-label">Economia Potencial</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado vazio -->
+  <div *ngIf="getTotalSuggestions() === 0" class="empty-state">
+    <mat-icon>psychology</mat-icon>
+    <h3>Analisando seus dados...</h3>
+    <p>A IA está processando suas transações para gerar sugestões personalizadas</p>
+  </div>
+
+  <!-- Grupos de sugestões -->
+  <div *ngIf="getTotalSuggestions() > 0" class="suggestions-groups">
+    <mat-accordion multi="true">
+      <mat-expansion-panel 
+        *ngFor="let type of getObjectKeys(groupedSuggestions)"
+        class="suggestion-group"
+        [expanded]="true">
+        
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <div class="group-title">
+              <mat-icon [style.color]="getTypeInfo(type).color">
+                {{ getTypeInfo(type).icon }}
+              </mat-icon>
+              <span>{{ getTypeInfo(type).label }}</span>
+              <mat-chip-set>
+                <mat-chip [matBadge]="groupedSuggestions[type].length" matBadgeOverlap="false">
+                  {{ groupedSuggestions[type].length }} item(s)
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="suggestions-list">
+          <mat-card 
+            *ngFor="let suggestion of groupedSuggestions[type]; trackBy: trackBySuggestion"
+            class="suggestion-card"
+            [ngClass]="'priority-' + suggestion.priority">
+            
+            <mat-card-header>
+              <div class="suggestion-header-content">
+                <div class="suggestion-title-section">
+                  <mat-card-title>{{ suggestion.title }}</mat-card-title>
+                  <mat-card-subtitle>{{ suggestion.description }}</mat-card-subtitle>
+                </div>
+                
+                <div class="suggestion-meta">
+                  <mat-chip 
+                    class="priority-chip"
+                    [style.background-color]="getPriorityColor(suggestion.priority)"
+                    [style.color]="'white'">
+                    <mat-icon>{{ getPriorityIcon(suggestion.priority) }}</mat-icon>
+                    {{ suggestion.priority === 'high' ? 'Alta' : suggestion.priority === 'medium' ? 'Média' : 'Baixa' }}
+                  </mat-chip>
+                </div>
+              </div>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="suggestion-details">
+                <div class="impact-section" *ngIf="suggestion.impact > 0">
+                  <div class="impact-value">
+                    <mat-icon>attach_money</mat-icon>
+                    <span>Impacto: {{ formatCurrency(suggestion.impact) }}</span>
+                  </div>
+                </div>
+
+                <div class="category-section" *ngIf="suggestion.category">
+                  <mat-icon>category</mat-icon>
+                  <span>{{ suggestion.category }}</span>
+                </div>
+
+                <div class="action-section" *ngIf="suggestion.actionRequired">
+                  <div class="action-header">
+                    <mat-icon>task_alt</mat-icon>
+                    <strong>Ação Recomendada:</strong>
+                  </div>
+                  <p class="action-text">{{ suggestion.actionRequired }}</p>
+                </div>
+
+                <div class="suggestion-footer">
+                  <small class="created-date">
+                    <mat-icon>schedule</mat-icon>
+                    {{ formatDate(suggestion.createdAt) }}
+                  </small>
+                  
+                  <div class="implementation-status" *ngIf="suggestion.isImplemented">
+                    <mat-chip class="implemented-chip">
+                      <mat-icon>check_circle</mat-icon>
+                      Implementada
+                    </mat-chip>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions *ngIf="!suggestion.isImplemented">
+              <button 
+                mat-button 
+                color="primary"
+                (click)="markAsImplemented(suggestion.id)">
+                <mat-icon>check</mat-icon>
+                Implementar
+              </button>
+              
+              <button 
+                mat-button 
+                (click)="dismissSuggestion(suggestion.id)">
+                <mat-icon>close</mat-icon>
+                Dispensar
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </div>
+</div>

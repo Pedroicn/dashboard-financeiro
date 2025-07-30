@@ -1,0 +1,118 @@
+.expense-form-card {
+  max-width: 500px;
+  margin: 0 auto;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  mat-card-header {
+    margin-bottom: 20px;
+    
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #333;
+      
+      mat-icon {
+        color: #2196F3;
+      }
+    }
+    
+    mat-card-subtitle {
+      color: #666;
+      margin-top: 5px;
+    }
+  }
+}
+
+.expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.recurring-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  
+  mat-checkbox {
+    margin-bottom: 10px;
+  }
+  
+  .period-field {
+    max-width: 200px;
+  }
+}
+
+.submit-button {
+  margin-top: 10px;
+  height: 48px;
+  font-size: 1rem;
+  
+  mat-icon {
+    margin-right: 8px;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+// Customização dos campos
+mat-form-field {
+  .mat-mdc-form-field-error {
+    font-size: 0.8rem;
+  }
+}
+
+// Ícones dos tipos de transação
+mat-option {
+  display: flex;
+  align-items: center;
+  
+  mat-icon {
+    margin-right: 8px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Animação de entrada
+.expense-form-card {
+  animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Responsividade
+@media (max-width: 768px) {
+  .expense-form-card {
+    margin: 0 15px;
+    max-width: none;
+  }
+  
+  .recurring-section {
+    .period-field {
+      max-width: none;
+    }
+  }
+}

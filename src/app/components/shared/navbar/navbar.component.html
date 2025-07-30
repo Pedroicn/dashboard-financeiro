@@ -1,0 +1,32 @@
+<mat-toolbar color="primary" class="navbar">
+  <div class="navbar-content">
+    <div class="navbar-brand">
+      <mat-icon>account_balance_wallet</mat-icon>
+      <span class="brand-text">Dashboard Financeiro</span>
+    </div>
+
+    <div class="navbar-user" *ngIf="user$ | async as user">
+      <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-menu-trigger">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      
+      <mat-menu #userMenu="matMenu" class="user-menu">
+        <div class="user-info" mat-menu-item disabled>
+          <div class="user-details">
+            <div class="user-name" *ngIf="userProfile$ | async as profile">
+              {{ profile.displayName }}
+            </div>
+            <div class="user-email">{{ user.email }}</div>
+          </div>
+        </div>
+        
+        <mat-divider></mat-divider>
+        
+        <button mat-menu-item (click)="logout()" class="logout-item">
+          <mat-icon>logout</mat-icon>
+          <span>Sair</span>
+        </button>
+      </mat-menu>
+    </div>
+  </div>
+</mat-toolbar>

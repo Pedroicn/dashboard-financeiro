@@ -1,0 +1,203 @@
+<div class="goals-container">
+  <div class="goals-header">
+    <h2>
+      <mat-icon>flag</mat-icon>
+      Metas Financeiras
+    </h2>
+    <button 
+      mat-fab 
+      color="primary" 
+      (click)="toggleForm()"
+      class="add-goal-btn">
+      <mat-icon>{{ showForm ? 'close' : 'add' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- Formulário de nova meta -->
+  <mat-card *ngIf="showForm" class="goal-form-card">
+    <mat-card-header>
+      <mat-card-title>Nova Meta</mat-card-title>
+      <mat-card-subtitle>Defina uma nova meta financeira</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="goalForm" (ngSubmit)="onSubmit()" class="goal-form">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Título da Meta</mat-label>
+            <input matInput formControlName="title" placeholder="Ex: Fundo de Emergência">
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Descrição (opcional)</mat-label>
+            <textarea 
+              matInput 
+              formControlName="description" 
+              rows="2"
+              placeholder="Descreva sua meta..."></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Valor Alvo</mat-label>
+            <input matInput type="number" step="0.01" formControlName="targetAmount">
+            <span matTextPrefix>R$ </span>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Valor Atual</mat-label>
+            <input matInput type="number" step="0.01" formControlName="currentAmount">
+            <span matTextPrefix>R$ </span>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Data Alvo</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="targetDate" readonly>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Categoria</mat-label>
+            <mat-select formControlName="category">
+              <mat-option *ngFor="let category of categories" [value]="category">
+                {{ category }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Prioridade</mat-label>
+            <mat-select formControlName="priority">
+              <mat-option *ngFor="let priority of priorities" [value]="priority.value">
+                <span [style.color]="priority.color">{{ priority.label }}</span>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="toggleForm()">Cancelar</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="goalForm.invalid">
+            <mat-icon>save</mat-icon>
+            Salvar Meta
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Lista de metas -->
+  <div class="goals-grid">
+    <mat-card 
+      *ngFor="let goal of goals$ | async; trackBy: trackByGoal"
+      class="goal-card"
+      [ngClass]="{'completed': hasProgress(goal.id) && getGoalProgress(goal.id)!.percentage >= 100}">
+      
+      <mat-card-header>
+        <div class="goal-header-content">
+          <div class="goal-title-section">
+            <mat-card-title>{{ goal.title }}</mat-card-title>
+            <mat-card-subtitle>{{ goal.description }}</mat-card-subtitle>
+          </div>
+          
+          <div class="goal-priority">
+            <span 
+              class="priority-badge"
+              [style.background-color]="getPriorityColor(goal.priority)">
+              {{ getPriorityLabel(goal.priority) }}
+            </span>
+          </div>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="goal-info">
+          <div class="goal-amounts">
+            <div class="current-amount">
+              <span class="label">Atual:</span>
+              <span class="value">{{ formatCurrency(goal.currentAmount) }}</span>
+            </div>
+            <div class="target-amount">
+              <span class="label">Meta:</span>
+              <span class="value">{{ formatCurrency(goal.targetAmount) }}</span>
+            </div>
+          </div>
+
+          <div class="progress-section" *ngIf="goalProgress[goal.id]">
+            <div class="progress-info">
+              <span class="percentage">{{ goalProgress[goal.id].percentage.toFixed(1) }}%</span>
+              <span class="status" [ngClass]="{'on-track': goalProgress[goal.id].onTrack, 'off-track': !goalProgress[goal.id].onTrack}">
+                {{ goalProgress[goal.id].onTrack ? 'No prazo' : 'Atrasado' }}
+              </span>
+            </div>
+            
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="goalProgress[goal.id].percentage"
+              [color]="goalProgress[goal.id].onTrack ? 'primary' : 'warn'">
+            </mat-progress-bar>
+            
+            <div class="progress-details">
+              <small>Faltam: {{ formatCurrency(goalProgress[goal.id].remainingAmount) }}</small>
+              <small>{{ getDaysRemaining(goalProgress[goal.id]) }}</small>
+            </div>
+            
+            <div class="monthly-required" *ngIf="goalProgress[goal.id].monthlyRequiredSaving > 0">
+              <small>
+                <mat-icon>trending_up</mat-icon>
+                Economizar {{ formatCurrency(goalProgress[goal.id].monthlyRequiredSaving) }}/mês
+              </small>
+            </div>
+          </div>
+
+          <div class="goal-meta">
+            <div class="category">
+              <mat-icon>category</mat-icon>
+              {{ goal.category }}
+            </div>
+            <div class="target-date">
+              <mat-icon>event</mat-icon>
+              {{ formatDate(goal.targetDate) }}
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button 
+          mat-button 
+          color="primary"
+          (click)="updateProgress(goal.id, 100)"
+          [disabled]="hasProgress(goal.id) && getGoalProgress(goal.id)!.percentage >= 100">
+          <mat-icon>add</mat-icon>
+          Adicionar R$ 100
+        </button>
+        
+        <button 
+          mat-button 
+          color="warn"
+          (click)="deleteGoal(goal.id)">
+          <mat-icon>delete</mat-icon>
+          Excluir
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- Estado vazio -->
+  <div *ngIf="(goals$ | async)?.length === 0" class="empty-state">
+    <mat-icon>flag</mat-icon>
+    <h3>Nenhuma meta definida</h3>
+    <p>Comece definindo suas metas financeiras para ter um objetivo claro</p>
+    <button mat-raised-button color="primary" (click)="toggleForm()">
+      <mat-icon>add</mat-icon>
+      Criar Primeira Meta
+    </button>
+  </div>
+</div>

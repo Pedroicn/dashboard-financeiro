@@ -1,0 +1,9 @@
+<div class="app-container">
+  <!-- Navbar apenas se não estiver em páginas de auth e usuário logado -->
+  <app-navbar *ngIf="(user$ | async) && !(isAuthPage$ | async)"></app-navbar>
+  
+  <!-- Conteúdo principal -->
+  <main class="main-content" [class.with-navbar]="(user$ | async) && !(isAuthPage$ | async)">
+    <router-outlet></router-outlet>
+  </main>
+</div>
