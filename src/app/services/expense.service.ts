@@ -1,10 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 import { Expense, ExpenseCategory, ExpenseSummary } from '../models/expense.model';
-import { StorageService } from './storage.service';
 import { AuthService } from './auth.service';
-import { Firestore, collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy } from '@angular/fire/firestore';
-import { map, switchMap } from 'rxjs/operators';
+import { Firestore, collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, where } from '@angular/fire/firestore';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +24,7 @@ export class ExpenseService {
     { id: '7', name: 'Outros', color: '#95A5A6', icon: 'more-horizontal', budget: 100 }
   ];
 
-  constructor(private storageService: StorageService) {
+  constructor() {
     // Aguardar um pouco para garantir que a autenticação foi inicializada
     setTimeout(() => {
       this.loadExpenses();
@@ -34,7 +33,6 @@ export class ExpenseService {
     // Recarregar dados quando o usuário mudar
     this.authService.user$.subscribe(user => {
       console.log('ExpenseService - user changed:', user?.uid);
-      // Aguardar um pouco para garantir que a mudança foi processada
       setTimeout(() => {
         this.loadExpenses();
       }, 100);
@@ -55,23 +53,28 @@ export class ExpenseService {
       throw new Error('Usuário não está logado');
     }
 
-    const expenseData = {
-      ...expense,
+    const expenseData: any = {
+      amount: Number(expense.amount),
+      description: expense.description || '',
+      category: expense.category,
       date: expense.date.toISOString(),
+      type: expense.type,
+      subcategory: expense.subcategory || '',
+      tags: expense.tags || [],
+      recurring: expense.recurring || false,
       userId
     };
+
+    // Adicionar recurringPeriod apenas se não for undefined
+    if (expense.recurringPeriod) {
+      expenseData.recurringPeriod = expense.recurringPeriod;
+    }
 
     const expensesRef = collection(this.firestore, 'expenses');
     return from(addDoc(expensesRef, expenseData)).pipe(
       map(() => {
-        // Atualizar a lista local
-        const newExpense: Expense = {
-          ...expense,
-          id: Date.now().toString() // temporário até recarregar do Firestore
-        };
-        this.expenses.push(newExpense);
-        this.expensesSubject.next([...this.expenses]);
-        this.loadExpenses(); // Recarregar do Firestore
+        console.log('Despesa adicionada ao Firestore');
+        this.loadExpensesFromFirestore();
       })
     );
   }
@@ -82,21 +85,28 @@ export class ExpenseService {
       throw new Error('Usuário não está logado');
     }
 
-    const expenseData = {
-      ...expense,
+    const expenseData: any = {
+      amount: Number(expense.amount),
+      description: expense.description || '',
+      category: expense.category,
       date: expense.date.toISOString(),
+      type: expense.type,
+      subcategory: expense.subcategory || '',
+      tags: expense.tags || [],
+      recurring: expense.recurring || false,
       userId
     };
+
+    // Adicionar recurringPeriod apenas se não for undefined
+    if (expense.recurringPeriod) {
+      expenseData.recurringPeriod = expense.recurringPeriod;
+    }
 
     const expenseRef = doc(this.firestore, 'expenses', expense.id);
     return from(updateDoc(expenseRef, expenseData)).pipe(
       map(() => {
-        // Atualizar a lista local
-        const index = this.expenses.findIndex(e => e.id === expense.id);
-        if (index !== -1) {
-          this.expenses[index] = expense;
-          this.expensesSubject.next([...this.expenses]);
-        }
+        console.log('Despesa atualizada no Firestore');
+        this.loadExpensesFromFirestore();
       })
     );
   }
@@ -110,30 +120,38 @@ export class ExpenseService {
     const expenseRef = doc(this.firestore, 'expenses', id);
     return from(deleteDoc(expenseRef)).pipe(
       map(() => {
-        // Atualizar a lista local
-        this.expenses = this.expenses.filter(e => e.id !== id);
-        this.expensesSubject.next([...this.expenses]);
+        console.log('Despesa excluída do Firestore');
+        this.loadExpensesFromFirestore();
       })
     );
   }
 
   getExpenseSummary(): ExpenseSummary {
-    const totalExpenses = this.expenses
-      .filter(e => e.type === 'expense')
-      .reduce((sum, e) => sum + e.amount, 0);
+    if (this.expenses.length === 0) {
+      return {
+        totalExpenses: 0,
+        totalIncome: 0,
+        balance: 0,
+        expensesByCategory: {},
+        monthlyTrend: []
+      };
+    }
 
-    const totalIncome = this.expenses
-      .filter(e => e.type === 'income')
-      .reduce((sum, e) => sum + e.amount, 0);
+    // Separar receitas e despesas
+    const incomes = this.expenses.filter(expense => expense.type === 'income');
+    const expenses = this.expenses.filter(expense => expense.type === 'expense');
+    
+    const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    const expensesByCategory: { [key: string]: number } = {};
+    // Incluir tanto receitas quanto despesas nas categorias (para os gráficos)
+    this.expenses.forEach(expense => {
+      expensesByCategory[expense.category] = (expensesByCategory[expense.category] || 0) + expense.amount;
+    });
 
-    const expensesByCategory = this.expenses
-      .filter(e => e.type === 'expense')
-      .reduce((acc, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-        return acc;
-      }, {} as { [category: string]: number });
-
-    const monthlyTrend = this.getMonthlyTrend();
+    // Calcular tendência mensal (últimos 6 meses)
+    const monthlyTrend = this.calculateMonthlyTrend();
 
     return {
       totalExpenses,
@@ -144,23 +162,33 @@ export class ExpenseService {
     };
   }
 
-  private getMonthlyTrend(): { month: string; amount: number }[] {
-    const monthlyData = new Map<string, number>();
+  private calculateMonthlyTrend(): Array<{ month: string; amount: number }> {
+    const trend: Array<{ month: string; amount: number }> = [];
+    const now = new Date();
     
-    this.expenses.forEach(expense => {
-      const month = expense.date.toISOString().substring(0, 7); // YYYY-MM
-      const current = monthlyData.get(month) || 0;
-      const amount = expense.type === 'expense' ? expense.amount : -expense.amount;
-      monthlyData.set(month, current + amount);
-    });
-
-    return Array.from(monthlyData.entries())
-      .map(([month, amount]) => ({ month, amount }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-  }
-
-  private generateId(): string {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+      
+      const monthTransactions = this.expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === date.getMonth() && 
+               expenseDate.getFullYear() === date.getFullYear();
+      });
+      
+      // Calcular saldo líquido do mês (receitas - despesas)
+      const monthIncome = monthTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const monthExpenses = monthTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      const netAmount = monthIncome - monthExpenses;
+      trend.push({ month: monthName, amount: netAmount });
+    }
+    
+    return trend;
   }
 
   private loadExpenses(): void {
@@ -174,126 +202,61 @@ export class ExpenseService {
       return;
     }
 
-    // Primeiro, tentar carregar do localStorage para usuários autenticados
-    const stored = this.storageService.getItem('financial-dashboard-expenses');
-    if (stored) {
-      this.expenses = JSON.parse(stored).map((e: any) => ({
-        ...e,
-        date: new Date(e.date)
-      }));
-      console.log('ExpenseService.loadExpenses - loaded from localStorage:', this.expenses.length, 'expenses');
-      this.expensesSubject.next([...this.expenses]);
-      return;
-    }
+    this.loadExpensesFromFirestore();
+  }
 
-    // Se não há dados no localStorage, adicionar dados de exemplo
-    console.log('ExpenseService.loadExpenses - no localStorage data, adding sample data');
-    this.addSampleData();
+  private loadExpensesFromFirestore(): void {
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) return;
+
+    console.log('🔍 FIRESTORE DEBUG - Carregando despesas para usuário:', userId);
     
-    /* Firestore temporariamente desabilitado para debug
-    console.log('ExpenseService.loadExpenses - loading from Firestore for user:', userId);
-    
-    // Carregar do Firestore
     const expensesRef = collection(this.firestore, 'expenses');
-    const q = query(
-      expensesRef,
-      where('userId', '==', userId),
-      orderBy('date', 'desc')
-    );
-
+    // Removendo orderBy temporariamente para não precisar do índice composto
+    const q = query(expensesRef, where('userId', '==', userId));
+    
     from(getDocs(q)).subscribe({
       next: (querySnapshot) => {
+        console.log('🔍 FIRESTORE DEBUG - Query executada, documentos encontrados:', querySnapshot.size);
+        
         this.expenses = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          this.expenses.push({
-            id: doc.id,
+          console.log('🔍 FIRESTORE DEBUG - Documento:', doc.id, {
+            userId: data['userId'],
+            category: data['category'],
             amount: data['amount'],
             description: data['description'],
+            date: data['date']
+          });
+          
+          const expense: Expense = {
+            id: doc.id,
+            amount: Number(data['amount']),
+            description: data['description'] || '',
             category: data['category'],
             date: new Date(data['date']),
-            type: data['type'] || 'expense'
-          } as Expense);
+            type: data['type'] as 'income' | 'expense',
+            subcategory: data['subcategory'] || '',
+            tags: data['tags'] || [],
+            recurring: data['recurring'] || false,
+            recurringPeriod: data['recurringPeriod'] || undefined
+          };
+          this.expenses.push(expense);
         });
         
-        console.log('ExpenseService.loadExpenses - loaded from Firestore:', this.expenses.length, 'expenses');
+        // Ordenar no lado do cliente por enquanto
+        this.expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
-        // Se for um usuário novo sem dados, adicionar dados de exemplo
-        if (this.expenses.length === 0) {
-          console.log('ExpenseService.loadExpenses - no data found, adding sample data');
-          this.addSampleData();
-        } else {
-          this.expensesSubject.next([...this.expenses]);
-        }
+        console.log('🔍 FIRESTORE DEBUG - ExpenseService carregou', this.expenses.length, 'despesas do Firestore para usuário:', userId);
+        this.expensesSubject.next([...this.expenses]);
       },
       error: (error) => {
-        console.error('Erro ao carregar despesas do Firestore:', error);
-        // Fallback para localStorage
-        const stored = this.storageService.getItem('financial-dashboard-expenses');
-        if (stored) {
-          this.expenses = JSON.parse(stored).map((e: any) => ({
-            ...e,
-            date: new Date(e.date)
-          }));
-          this.expensesSubject.next([...this.expenses]);
-        } else {
-          this.expenses = [];
-          this.expensesSubject.next([]);
-        }
-        console.log('ExpenseService.loadExpenses - Firestore error, localStorage fallback, expenses:', this.expenses.length);
+        console.error('❌ FIRESTORE ERROR - Erro ao carregar despesas:', error);
+        this.expenses = [];
+        this.expensesSubject.next([]);
       }
     });
-    */
-  }
-
-  private saveExpenses(): void {
-    this.storageService.setItem('financial-dashboard-expenses', JSON.stringify(this.expenses));
-  }
-
-  private addSampleData(): void {
-    const sampleExpenses: Omit<Expense, 'id'>[] = [
-      {
-        amount: 45.90,
-        description: 'Supermercado',
-        category: 'Alimentação',
-        date: new Date('2025-07-25'),
-        type: 'expense'
-      },
-      {
-        amount: 3500.00,
-        description: 'Salário',
-        category: 'Outros',
-        date: new Date('2025-07-01'),
-        type: 'income'
-      },
-      {
-        amount: 25.50,
-        description: 'Uber',
-        category: 'Transporte',
-        date: new Date('2025-07-24'),
-        type: 'expense'
-      },
-      {
-        amount: 120.00,
-        description: 'Cinema',
-        category: 'Entretenimento',
-        date: new Date('2025-07-23'),
-        type: 'expense'
-      }
-    ];
-
-    // Adicionar diretamente à lista local temporariamente
-    sampleExpenses.forEach(expenseData => {
-      const expense: Expense = {
-        ...expenseData,
-        id: this.generateId()
-      };
-      this.expenses.push(expense);
-    });
-    
-    console.log('ExpenseService.addSampleData - added sample data:', this.expenses.length);
-    this.expensesSubject.next([...this.expenses]);
-    this.saveExpenses();
   }
 
   // Método para recarregar dados quando usuário faz login

@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
+import { CleanupService } from './services/cleanup.service';
 import { NavbarComponent } from './components/shared/navbar/navbar.component';
 import { map, filter, startWith } from 'rxjs/operators';
 
@@ -17,6 +18,7 @@ import { map, filter, startWith } from 'rxjs/operators';
 })
 export class AppComponent {
   private authService = inject(AuthService);
+  // private cleanupService = inject(CleanupService); // DESABILITADO TEMPORARIAMENTE
   private router = inject(Router);
   
   title = 'Dashboard Financeiro';

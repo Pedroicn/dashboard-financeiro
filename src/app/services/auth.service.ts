@@ -36,6 +36,9 @@ export class AuthService {
   );
 
   constructor() {
+    // Limpar dados antigos do localStorage quando o serviço for inicializado
+    this.clearOldData();
+    
     // Os serviços irão reagir automaticamente às mudanças de usuário
     // através dos observables getCurrentUserId()
   }
@@ -95,5 +98,32 @@ export class AuthService {
   reloadUserData(): void {
     // Este método pode ser chamado pelos componentes após login bem-sucedido
     // para recarregar os dados específicos do usuário
+  }
+
+  // Método para limpar dados antigos do localStorage
+  private clearOldData(): void {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      // Remove todos os dados relacionados ao dashboard financeiro
+      const keys = Object.keys(localStorage);
+      const dashboardKeys = keys.filter(key => 
+        key.includes('financial-dashboard') || 
+        key.includes('expenses') || 
+        key.includes('goals') || 
+        key.includes('suggestions') ||
+        key.includes('ai-') ||
+        key.includes('expense') ||
+        key.includes('goal')
+      );
+      
+      dashboardKeys.forEach(key => {
+        localStorage.removeItem(key);
+        console.log('Removido localStorage key:', key);
+      });
+      
+      // Se houver muitas chaves relacionadas, limpa tudo para garantir
+      if (dashboardKeys.length > 0) {
+        console.log('Removidos', dashboardKeys.length, 'dados antigos do localStorage');
+      }
+    }
   }
 }

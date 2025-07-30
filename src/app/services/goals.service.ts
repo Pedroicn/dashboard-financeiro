@@ -1,26 +1,30 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 import { Goal, GoalProgress } from '../models/goal.model';
-import { StorageService } from './storage.service';
 import { AuthService } from './auth.service';
+import { Firestore, collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, where } from '@angular/fire/firestore';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GoalsService {
+  private firestore = inject(Firestore);
   private goals: Goal[] = [];
   private goalsSubject = new BehaviorSubject<Goal[]>([]);
 
   constructor(
-    private storageService: StorageService,
     private authService: AuthService
   ) {
+    // Aguardar um pouco para garantir que a autenticação foi inicializada
     setTimeout(() => {
       this.loadGoals();
     }, 500);
     
+    // Recarregar dados quando o usuário mudar
     this.authService.user$.subscribe((user: any) => {
       console.log('GoalsService - user changed:', user?.uid);
+      // Aguardar um pouco para garantir que a mudança foi processada
       setTimeout(() => {
         this.loadGoals();
       }, 100);
@@ -37,18 +41,27 @@ export class GoalsService {
       throw new Error('Usuário não está logado');
     }
 
-    const newGoal: Goal = {
-      ...goal,
-      id: this.generateId(),
-      createdAt: new Date(),
-      updatedAt: new Date()
+    const goalData = {
+      title: goal.title,
+      description: goal.description,
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      targetDate: goal.targetDate.toISOString(),
+      category: goal.category,
+      priority: goal.priority,
+      isActive: goal.isActive,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      userId
     };
-    
-    this.goals.push(newGoal);
-    this.goalsSubject.next([...this.goals]);
-    this.saveGoals();
 
-    return from(Promise.resolve());
+    const goalsRef = collection(this.firestore, 'goals');
+    return from(addDoc(goalsRef, goalData)).pipe(
+      map(() => {
+        console.log('Meta adicionada ao Firestore');
+        this.loadGoalsFromFirestore();
+      })
+    );
   }
 
   updateGoal(goal: Goal): Observable<void> {
@@ -57,14 +70,26 @@ export class GoalsService {
       throw new Error('Usuário não está logado');
     }
 
-    const index = this.goals.findIndex(g => g.id === goal.id);
-    if (index !== -1) {
-      this.goals[index] = { ...goal, updatedAt: new Date() };
-      this.goalsSubject.next([...this.goals]);
-      this.saveGoals();
-    }
+    const goalData = {
+      title: goal.title,
+      description: goal.description,
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      targetDate: goal.targetDate.toISOString(),
+      category: goal.category,
+      priority: goal.priority,
+      isActive: goal.isActive,
+      updatedAt: new Date().toISOString(),
+      userId
+    };
 
-    return from(Promise.resolve());
+    const goalRef = doc(this.firestore, 'goals', goal.id);
+    return from(updateDoc(goalRef, goalData)).pipe(
+      map(() => {
+        console.log('Meta atualizada no Firestore');
+        this.loadGoalsFromFirestore();
+      })
+    );
   }
 
   deleteGoal(id: string): Observable<void> {
@@ -73,11 +98,13 @@ export class GoalsService {
       throw new Error('Usuário não está logado');
     }
 
-    this.goals = this.goals.filter(g => g.id !== id);
-    this.goalsSubject.next([...this.goals]);
-    this.saveGoals();
-
-    return from(Promise.resolve());
+    const goalRef = doc(this.firestore, 'goals', id);
+    return from(deleteDoc(goalRef)).pipe(
+      map(() => {
+        console.log('Meta excluída do Firestore');
+        this.loadGoalsFromFirestore();
+      })
+    );
   }
 
   updateGoalProgress(goalId: string, amount: number): Observable<void> {
@@ -105,6 +132,7 @@ export class GoalsService {
     const monthsRemaining = daysRemaining / 30;
     const monthlyRequiredSaving = monthsRemaining > 0 ? remainingAmount / monthsRemaining : 0;
     
+    // Considera que está no caminho certo se está economizando pelo menos 80% do necessário
     const expectedProgress = ((now.getTime() - goal.createdAt.getTime()) / (goal.targetDate.getTime() - goal.createdAt.getTime())) * 100;
     const onTrack = percentage >= expectedProgress * 0.8;
 
@@ -137,76 +165,64 @@ export class GoalsService {
       return;
     }
 
-    const stored = this.storageService.getItem('financial-dashboard-goals');
-    if (stored) {
-      this.goals = JSON.parse(stored).map((g: any) => ({
-        ...g,
-        targetDate: new Date(g.targetDate),
-        createdAt: new Date(g.createdAt),
-        updatedAt: new Date(g.updatedAt)
-      }));
-      console.log('GoalsService.loadGoals - loaded from localStorage:', this.goals.length, 'goals');
-      this.goalsSubject.next([...this.goals]);
-      return;
-    }
-
-    console.log('GoalsService.loadGoals - no localStorage data, adding sample goals');
-    this.addSampleGoals();
+    this.loadGoalsFromFirestore();
   }
 
-  private saveGoals(): void {
-    this.storageService.setItem('financial-dashboard-goals', JSON.stringify(this.goals));
-  }
+  private loadGoalsFromFirestore(): void {
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) return;
 
-  private addSampleGoals(): void {
-    const sampleGoals: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>[] = [
-      {
-        title: 'Fundo de Emergência',
-        description: 'Reserva para 6 meses de gastos',
-        targetAmount: 15000,
-        currentAmount: 3500,
-        targetDate: new Date('2026-01-01'),
-        category: 'Emergência',
-        priority: 'high',
-        isActive: true
-      },
-      {
-        title: 'Viagem para Europa',
-        description: 'Viagem de férias para Europa em 2025',
-        targetAmount: 8000,
-        currentAmount: 1200,
-        targetDate: new Date('2025-12-01'),
-        category: 'Lazer',
-        priority: 'medium',
-        isActive: true
-      },
-      {
-        title: 'Novo Notebook',
-        description: 'Notebook para trabalho',
-        targetAmount: 4500,
-        currentAmount: 800,
-        targetDate: new Date('2025-10-01'),
-        category: 'Tecnologia',
-        priority: 'medium',
-        isActive: true
-      }
-    ];
-
-    sampleGoals.forEach(goalData => {
-      const goal: Goal = {
-        ...goalData,
-        id: this.generateId(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.goals.push(goal);
-    });
+    console.log('🔍 FIRESTORE DEBUG - Carregando metas para usuário:', userId);
     
-    console.log('GoalsService.addSampleGoals - added sample goals:', this.goals.length);
-    this.goalsSubject.next([...this.goals]);
-    this.saveGoals();
+    const goalsRef = collection(this.firestore, 'goals');
+    // Removendo orderBy temporariamente para não precisar do índice composto
+    const q = query(goalsRef, where('userId', '==', userId));
+    
+    from(getDocs(q)).subscribe({
+      next: (querySnapshot) => {
+        console.log('🔍 FIRESTORE DEBUG - Query metas executada, documentos encontrados:', querySnapshot.size);
+        
+        this.goals = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log('🔍 FIRESTORE DEBUG - Meta documento:', doc.id, {
+            userId: data['userId'],
+            title: data['title'],
+            targetAmount: data['targetAmount'],
+            currentAmount: data['currentAmount']
+          });
+          
+          const goal: Goal = {
+            id: doc.id,
+            title: data['title'],
+            description: data['description'],
+            targetAmount: data['targetAmount'],
+            currentAmount: data['currentAmount'],
+            targetDate: new Date(data['targetDate']),
+            category: data['category'],
+            priority: data['priority'],
+            isActive: data['isActive'],
+            createdAt: new Date(data['createdAt']),
+            updatedAt: new Date(data['updatedAt'])
+          };
+          this.goals.push(goal);
+        });
+        
+        // Ordenar no lado do cliente por enquanto (por data de criação, mais recente primeiro)
+        this.goals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        console.log('🔍 FIRESTORE DEBUG - GoalsService carregou', this.goals.length, 'metas do Firestore para usuário:', userId);
+        this.goalsSubject.next([...this.goals]);
+      },
+      error: (error) => {
+        console.error('❌ FIRESTORE ERROR - Erro ao carregar metas:', error);
+        this.goals = [];
+        this.goalsSubject.next([]);
+      }
+    });
   }
 
+  // Método para recarregar dados quando usuário faz login
   reloadUserData(): void {
     this.loadGoals();
   }

@@ -8,7 +8,9 @@ import { AuthService } from './auth.service';
 export class StorageService {
   private authService = inject(AuthService);
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    console.log('🚨 StorageService constructor chamado!', new Error().stack);
+  }
 
   private getUserKey(key: string): string {
     const userId = this.authService.getCurrentUserId();
@@ -16,18 +18,18 @@ export class StorageService {
   }
 
   getItem(key: string): string | null {
-    if (isPlatformBrowser(this.platformId)) {
-      const userKey = this.getUserKey(key);
-      return localStorage.getItem(userKey);
-    }
-    return null;
+    console.error('🚨 StorageService.getItem chamado!', { key, stack: new Error().stack });
+    return null; // BLOQUEADO
   }
 
   setItem(key: string, value: string): void {
-    if (isPlatformBrowser(this.platformId)) {
-      const userKey = this.getUserKey(key);
-      localStorage.setItem(userKey, value);
-    }
+    console.error('🚨 CRÍTICO: StorageService.setItem sendo chamado!', {
+      key: key,
+      value: value?.substring(0, 100) + '...',
+      stackTrace: new Error().stack
+    });
+    // COMPLETAMENTE BLOQUEADO - NÃO FAZ NADA
+    throw new Error('StorageService BLOQUEADO para debug');
   }
 
   removeItem(key: string): void {
@@ -63,6 +65,24 @@ export class StorageService {
           localStorage.removeItem(key);
         }
       });
+    }
+  }
+
+  // Método para limpar dados antigos do sistema anterior
+  clearOldData(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      // Remove dados antigos que não eram isolados por usuário
+      const oldKeys = [
+        'financial-dashboard-expenses',
+        'financial-dashboard-goals',
+        'financial-dashboard-ai-suggestions'
+      ];
+      
+      oldKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      
+      console.log('Dados antigos do localStorage removidos');
     }
   }
 }

@@ -3,17 +3,15 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { AISuggestion, AIAnalysis } from '../models/ai.model';
 import { Expense, ExpenseSummary } from '../models/expense.model';
 import { Goal } from '../models/goal.model';
-import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AiService {
-  private storageService = inject(StorageService);
   private suggestionsSubject = new BehaviorSubject<AISuggestion[]>([]);
 
   constructor() {
-    this.loadSuggestions();
+    // As sugestões serão geradas dinamicamente, não precisam ser persistidas
   }
 
   getSuggestions(): Observable<AISuggestion[]> {
@@ -61,7 +59,7 @@ export class AiService {
     );
     
     this.suggestionsSubject.next(updatedSuggestions);
-    this.saveSuggestions();
+    // Sugestões são geradas dinamicamente, não precisam ser persistidas
     return new Observable(observer => {
       observer.next();
       observer.complete();
@@ -73,7 +71,7 @@ export class AiService {
     const updatedSuggestions = suggestions.filter(suggestion => suggestion.id !== suggestionId);
     
     this.suggestionsSubject.next(updatedSuggestions);
-    this.saveSuggestions();
+    // Sugestões são geradas dinamicamente, não precisam ser persistidas
     return new Observable(observer => {
       observer.next();
       observer.complete();
@@ -264,22 +262,5 @@ export class AiService {
 
   private generateId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  }
-
-  private saveSuggestions(): void {
-    const suggestions = this.suggestionsSubject.value;
-    this.storageService.setItem('financial-dashboard-suggestions', JSON.stringify(suggestions));
-  }
-
-  private loadSuggestions(): void {
-    const stored = this.storageService.getItem('financial-dashboard-suggestions');
-    if (stored) {
-      const suggestions = JSON.parse(stored).map((s: any) => ({
-        ...s,
-        createdAt: new Date(s.createdAt),
-        implementedAt: s.implementedAt ? new Date(s.implementedAt) : undefined
-      }));
-      this.suggestionsSubject.next(suggestions);
-    }
   }
 }
