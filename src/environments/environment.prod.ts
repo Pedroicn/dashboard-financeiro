@@ -7,5 +7,8 @@ export const environment = {
     storageBucket: "dashboard-financeiro-5dc0e.firebasestorage.app",
     messagingSenderId: "305472149803",
     appId: "1:305472149803:web:4a6d37eca638d03b1a0d6e"
-  }
+  },
+  // Configurações de produção
+  enableDebug: false,
+  apiUrl: 'https://dashboard-financeiro-5dc0e.web.app'
 };
