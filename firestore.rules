@@ -25,6 +25,18 @@ service cloud.firestore {
         && request.auth.uid == request.resource.data.userId;
     }
     
+    // Regras para coleção de limites de orçamento
+    match /budgetLimits/{document} {
+      // Apenas usuários autenticados podem acessar
+      allow read, write: if request.auth != null 
+        // E apenas seus próprios dados (onde userId == uid do usuário)
+        && request.auth.uid == resource.data.userId;
+      
+      // Permitir criação apenas se o userId na criação for o mesmo do usuário autenticado
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+    
     // Regras para coleção de sugestões de IA (futuro)
     match /ai_suggestions/{document} {
       // Apenas usuários autenticados podem acessar

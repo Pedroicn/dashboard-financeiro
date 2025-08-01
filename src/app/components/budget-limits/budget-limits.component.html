@@ -1,0 +1,168 @@
+<div class="budget-limits-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>account_balance_wallet</mat-icon>
+        Limites de Orçamento
+      </mat-card-title>
+      <mat-card-subtitle>
+        Defina limites mensais para cada categoria e acompanhe seus gastos
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Formulário para adicionar/editar limites -->
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>Definir Limite</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="budgetForm" (ngSubmit)="onSubmit()" class="budget-form">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="category-field">
+            <mat-label>Categoria</mat-label>
+            <mat-select formControlName="categoryName">
+              <mat-option *ngFor="let category of categories" [value]="category.name">
+                <mat-icon [style.color]="category.color">{{ getCategoryIcon(category.name) }}</mat-icon>
+                {{ category.name }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="budgetForm.get('categoryName')?.invalid && budgetForm.get('categoryName')?.touched">
+              {{ getErrorMessage('categoryName') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="amount-field">
+            <mat-label>Limite Mensal</mat-label>
+            <input 
+              matInput 
+              type="number" 
+              step="0.01"
+              min="0.01"
+              formControlName="monthlyLimit"
+              placeholder="0,00">
+            <span matTextPrefix>R$ </span>
+            <mat-error *ngIf="budgetForm.get('monthlyLimit')?.invalid && budgetForm.get('monthlyLimit')?.touched">
+              {{ getErrorMessage('monthlyLimit') }}
+            </mat-error>
+          </mat-form-field>
+
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit"
+            class="submit-button"
+            [disabled]="budgetForm.invalid">
+            <mat-icon>save</mat-icon>
+            Salvar
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Lista de orçamentos atuais -->
+  <mat-card class="budgets-card">
+    <mat-card-header>
+      <mat-card-title>Orçamentos Ativos</mat-card-title>
+      <div class="header-actions">
+        <mat-card-subtitle>Acompanhe seus gastos por categoria</mat-card-subtitle>
+        <button 
+          mat-icon-button 
+          color="primary"
+          (click)="refreshBudgets()"
+          matTooltip="Atualizar orçamentos">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div *ngIf="(categoryBudgets$ | async) && (categoryBudgets$ | async)!.length === 0" class="empty-state">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <h3>Nenhum limite definido</h3>
+        <p>Defina limites para suas categorias para começar a acompanhar seus gastos</p>
+      </div>
+
+      <div *ngIf="(categoryBudgets$ | async) && (categoryBudgets$ | async)!.length > 0" class="budgets-list">
+        <mat-expansion-panel 
+          *ngFor="let budget of categoryBudgets$ | async; trackBy: trackByCategory"
+          class="budget-panel"
+          [ngClass]="{'over-budget': budget.isOverBudget, 'warning': budget.percentageUsed > 80 && !budget.isOverBudget}">
+          
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <div class="budget-header">
+                <div class="category-info">
+                  <mat-icon [style.color]="getCategoryColor(budget.categoryName)">
+                    {{ getCategoryIcon(budget.categoryName) }}
+                  </mat-icon>
+                  <span class="category-name">{{ budget.categoryName }}</span>
+                </div>
+                
+                <div class="budget-summary">
+                  <span class="spent-amount" [ngClass]="{'over-budget': budget.isOverBudget}">
+                    {{ formatCurrency(budget.currentSpent) }}
+                  </span>
+                  <span class="separator">/</span>
+                  <span class="limit-amount">{{ formatCurrency(budget.monthlyLimit) }}</span>
+                </div>
+              </div>
+            </mat-panel-title>
+            
+            <mat-panel-description>
+              <mat-chip 
+                class="status-chip"
+                [ngClass]="{
+                  'over-budget': budget.isOverBudget,
+                  'warning': budget.percentageUsed > 80 && !budget.isOverBudget,
+                  'good': budget.percentageUsed <= 80
+                }">
+                {{ budget.percentageUsed.toFixed(0) }}%
+              </mat-chip>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="budget-details">
+            <div class="progress-section">
+              <mat-progress-bar 
+                [value]="Math.min(budget.percentageUsed, 100)"
+                [color]="getProgressBarColor(budget)">
+              </mat-progress-bar>
+              
+              <div class="progress-info">
+                <div class="remaining-budget">
+                  <span class="label">Restante:</span>
+                  <span class="value" [ngClass]="{'negative': budget.remainingBudget < 0}">
+                    {{ formatCurrency(budget.remainingBudget) }}
+                  </span>
+                </div>
+                
+                <div class="percentage-used">
+                  <span class="label">Usado:</span>
+                  <span class="value">{{ budget.percentageUsed.toFixed(1) }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="budget-status" *ngIf="budget.isOverBudget">
+              <mat-icon color="warn">warning</mat-icon>
+              <span>Orçamento ultrapassado em {{ formatCurrency(Math.abs(budget.remainingBudget)) }}</span>
+            </div>
+
+            <div class="budget-actions">
+              <button 
+                mat-stroked-button 
+                color="warn"
+                (click)="deleteBudgetLimit(budget.categoryName)">
+                <mat-icon>delete</mat-icon>
+                Remover Limite
+              </button>
+            </div>
+          </div>
+        </mat-expansion-panel>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

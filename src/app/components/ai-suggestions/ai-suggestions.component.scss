@@ -88,9 +88,27 @@
   }
   
   p {
-    margin: 0;
+    margin: 0 0 20px 0;
     color: #666;
   }
+  
+  .loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #9C27B0;
+    font-size: 0.9rem;
+    
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .suggestions-groups {
@@ -283,34 +301,19 @@
           font-size: 0.9rem;
           line-height: 1.4;
         }
-      }
-      
-      .suggestion-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid #eee;
-        
-        .created-date {
+      }        .suggestion-footer {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 5px;
-          color: #999;
-          font-size: 0.8rem;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #eee;
           
-          mat-icon {
-            font-size: 14px;
-            width: 14px;
-            height: 14px;
-          }
-        }
-        
-        .implementation-status {
-          .implemented-chip {
-            background-color: rgba(76, 175, 80, 0.1);
-            color: #4CAF50;
+          .created-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #999;
             font-size: 0.8rem;
             
             mat-icon {
@@ -319,22 +322,187 @@
               height: 14px;
             }
           }
+          
+          .suggestion-tip {
+            .tip-chip {
+              background-color: rgba(76, 175, 80, 0.1);
+              color: #4CAF50;
+              font-size: 0.8rem;
+              
+              mat-icon {
+                font-size: 14px;
+                width: 14px;
+                height: 14px;
+              }
+            }
+          }
         }
-      }
+        
+        .visual-tip-note {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 15px;
+          padding: 10px;
+          background-color: rgba(156, 39, 176, 0.05);
+          border-radius: 6px;
+          border: 1px solid rgba(156, 39, 176, 0.1);
+          color: #666;
+          font-size: 0.8rem;
+          
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+            color: #9C27B0;
+          }
+        }
     }
   }
+}
+
+// AI Suggestions Snackbar Styles
+.success-snackbar {
+  --mdc-snackbar-container-color: #4CAF50 !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+.error-snackbar {
+  --mdc-snackbar-container-color: #F44336 !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+.info-snackbar {
+  --mdc-snackbar-container-color: #2196F3 !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+// AI Suggestions visual improvements
+.suggestion-card {
+  transition: all 0.3s ease-in-out;
+  border-left: 4px solid transparent;
   
-  mat-card-actions {
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-    display: flex;
-    gap: 10px;
-    
-    button {
-      mat-icon {
-        margin-right: 5px;
-      }
-    }
+  &.priority-high {
+    border-left-color: #F44336;
+    background: linear-gradient(135deg, #ffffff 0%, #ffebee 100%);
+  }
+  
+  &.priority-medium {
+    border-left-color: #FF9800;
+    background: linear-gradient(135deg, #ffffff 0%, #fff3e0 100%);
+  }
+  
+  &.priority-low {
+    border-left-color: #4CAF50;
+    background: linear-gradient(135deg, #ffffff 0%, #e8f5e8 100%);
+  }
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.tip-chip {
+  background-color: #e3f2fd !important;
+  color: #1976d2 !important;
+  font-size: 0.85rem;
+  
+  mat-icon {
+    color: #ffc107;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.suggestion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.created-date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #757575;
+  font-size: 0.8rem;
+  
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// Priority chip styling improvements
+.priority-chip {
+  font-size: 0.75rem !important;
+  min-height: 24px !important;
+  
+  mat-icon {
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 4px !important;
+  }
+}
+
+// Empty state styling
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #757575;
+  
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+    color: #e0e0e0;
+  }
+  
+  h3 {
+    margin: 20px 0 10px 0;
+    color: #424242;
+  }
+  
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// Suggestion type indicators
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Animation for new suggestions
+.suggestion-card {
+  animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -359,14 +527,6 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 10px;
-    }
-    
-    mat-card-actions {
-      flex-direction: column;
-      
-      button {
-        width: 100%;
-      }
     }
   }
 }

@@ -1,0 +1,312 @@
+.budget-limits-container {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.header-card {
+  margin-bottom: 20px;
+  
+  mat-card-header {
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #333;
+      
+      mat-icon {
+        color: #4CAF50;
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+      }
+    }
+    
+    mat-card-subtitle {
+      color: #666;
+      margin-top: 5px;
+    }
+  }
+}
+
+.form-card {
+  margin-bottom: 30px;
+  
+  .budget-form {
+    .form-row {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+      
+      .category-field {
+        flex: 2;
+      }
+      
+      .amount-field {
+        flex: 1;
+      }
+      
+      .submit-button {
+        margin-top: 8px;
+        height: 48px;
+        
+        mat-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+}
+
+.budgets-card {
+  mat-card-header {
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      
+      mat-card-subtitle {
+        margin: 0;
+      }
+    }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 15px;
+      color: #ccc;
+    }
+    
+    h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+  
+  .budgets-list {
+    .budget-panel {
+      margin-bottom: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+      
+      &.over-budget {
+        border-left: 4px solid #F44336;
+      }
+      
+      &.warning {
+        border-left: 4px solid #FF9800;
+      }
+      
+      .mat-expansion-panel-header {
+        padding: 15px 20px;
+        
+        .budget-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          
+          .category-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            
+            mat-icon {
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+            }
+            
+            .category-name {
+              font-weight: 500;
+              color: #333;
+            }
+          }
+          
+          .budget-summary {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1rem;
+            
+            .spent-amount {
+              font-weight: 600;
+              color: #333;
+              
+              &.over-budget {
+                color: #F44336;
+              }
+            }
+            
+            .separator {
+              color: #999;
+            }
+            
+            .limit-amount {
+              color: #666;
+            }
+          }
+        }
+        
+        .status-chip {
+          font-size: 0.8rem;
+          font-weight: 500;
+          
+          &.good {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+          }
+          
+          &.warning {
+            background-color: rgba(255, 152, 0, 0.1);
+            color: #FF9800;
+          }
+          
+          &.over-budget {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: #F44336;
+          }
+        }
+      }
+      
+      .budget-details {
+        padding: 20px;
+        
+        .progress-section {
+          margin-bottom: 20px;
+          
+          mat-progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+          }
+          
+          .progress-info {
+            display: flex;
+            justify-content: space-between;
+            
+            .remaining-budget,
+            .percentage-used {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              
+              .label {
+                font-size: 0.8rem;
+                color: #666;
+                margin-bottom: 2px;
+              }
+              
+              .value {
+                font-weight: 500;
+                color: #333;
+                
+                &.negative {
+                  color: #F44336;
+                }
+              }
+            }
+          }
+        }
+        
+        .budget-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px;
+          background-color: rgba(244, 67, 54, 0.1);
+          border-radius: 6px;
+          color: #F44336;
+          margin-bottom: 20px;
+          font-size: 0.9rem;
+          
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+        }
+        
+        .budget-actions {
+          display: flex;
+          justify-content: flex-end;
+          
+          button {
+            mat-icon {
+              margin-right: 5px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsividade
+@media (max-width: 768px) {
+  .budget-limits-container {
+    padding: 15px;
+  }
+  
+  .form-card .budget-form .form-row {
+    flex-direction: column;
+    
+    .submit-button {
+      margin-top: 0;
+      width: 100%;
+    }
+  }
+  
+  .budget-panel .mat-expansion-panel-header .budget-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .budget-details .progress-info {
+    flex-direction: column;
+    gap: 10px;
+    
+    .remaining-budget,
+    .percentage-used {
+      align-items: flex-start;
+    }
+  }
+}
+
+// Animações
+.budget-panel {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.budget-panel:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.budget-panel:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

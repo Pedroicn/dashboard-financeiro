@@ -11,12 +11,14 @@ import { ExpenseListComponent } from '../expense-list/expense-list.component';
 import { ChartsComponent } from '../charts/charts.component';
 import { GoalsComponent } from '../goals/goals.component';
 import { AiSuggestionsComponent } from '../ai-suggestions/ai-suggestions.component';
+import { BudgetLimitsComponent } from '../budget-limits/budget-limits.component';
 
 import { ExpenseService } from '../../services/expense.service';
 import { GoalsService } from '../../services/goals.service';
 import { AiService } from '../../services/ai.service';
 import { ExpenseSummary } from '../../models/expense.model';
 import { Goal } from '../../models/goal.model';
+import { debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,7 +33,8 @@ import { Goal } from '../../models/goal.model';
     ExpenseListComponent,
     ChartsComponent,
     GoalsComponent,
-    AiSuggestionsComponent
+    AiSuggestionsComponent,
+    BudgetLimitsComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -55,15 +58,19 @@ export class DashboardComponent implements OnInit {
     this.loadSummary();
     this.generateAISuggestions();
 
-    // Atualizar dados quando houver mudanças
-    this.expenseService.getExpenses().subscribe(() => {
-      this.loadSummary();
-      this.generateAISuggestions();
-    });
+    // Atualizar dados quando houver mudanças (com debounce para evitar muitas chamadas)
+    this.expenseService.getExpenses()
+      .pipe(debounceTime(500))
+      .subscribe(() => {
+        this.loadSummary();
+        this.generateAISuggestions();
+      });
 
-    this.goalsService.getGoals().subscribe(() => {
-      this.generateAISuggestions();
-    });
+    this.goalsService.getGoals()
+      .pipe(debounceTime(500))
+      .subscribe(() => {
+        this.generateAISuggestions();
+      });
   }
 
   private loadSummary(): void {
@@ -71,8 +78,11 @@ export class DashboardComponent implements OnInit {
   }
 
   private generateAISuggestions(): void {
+    console.log('🤖 Dashboard - Gerando sugestões de IA...');
+    
     this.expenseService.getExpenses().subscribe(expenses => {
       this.goalsService.getGoals().subscribe((goals: Goal[]) => {
+        console.log('🤖 Dashboard - Dados carregados. Despesas:', expenses.length, 'Metas:', goals.length);
         this.aiService.generateSuggestions(expenses, goals, this.summary);
       });
     });

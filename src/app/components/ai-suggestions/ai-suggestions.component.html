@@ -32,6 +32,10 @@
     <mat-icon>psychology</mat-icon>
     <h3>Analisando seus dados...</h3>
     <p>A IA está processando suas transações para gerar sugestões personalizadas</p>
+    <div class="loading-indicator">
+      <mat-icon class="spinning">refresh</mat-icon>
+      <span>Gerando insights inteligentes...</span>
+    </div>
   </div>
 
   <!-- Grupos de sugestões -->
@@ -111,32 +115,20 @@
                     {{ formatDate(suggestion.createdAt) }}
                   </small>
                   
-                  <div class="implementation-status" *ngIf="suggestion.isImplemented">
-                    <mat-chip class="implemented-chip">
-                      <mat-icon>check_circle</mat-icon>
-                      Implementada
+                  <div class="suggestion-tip">
+                    <mat-chip class="tip-chip">
+                      <mat-icon>lightbulb</mat-icon>
+                      Dica Inteligente
                     </mat-chip>
                   </div>
                 </div>
+
+                <div class="visual-tip-note">
+                  <mat-icon>info</mat-icon>
+                  <span>Esta é uma dica visual baseada na análise dos seus dados financeiros</span>
+                </div>
               </div>
             </mat-card-content>
-
-            <mat-card-actions *ngIf="!suggestion.isImplemented">
-              <button 
-                mat-button 
-                color="primary"
-                (click)="markAsImplemented(suggestion.id)">
-                <mat-icon>check</mat-icon>
-                Implementar
-              </button>
-              
-              <button 
-                mat-button 
-                (click)="dismissSuggestion(suggestion.id)">
-                <mat-icon>close</mat-icon>
-                Dispensar
-              </button>
-            </mat-card-actions>
           </mat-card>
         </div>
       </mat-expansion-panel>

@@ -3,12 +3,14 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { AISuggestion, AIAnalysis } from '../models/ai.model';
 import { Expense, ExpenseSummary } from '../models/expense.model';
 import { Goal } from '../models/goal.model';
+import { BudgetLimitService } from './budget-limit.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AiService {
   private suggestionsSubject = new BehaviorSubject<AISuggestion[]>([]);
+  private budgetLimitService = inject(BudgetLimitService);
 
   constructor() {
     // As sugestões serão geradas dinamicamente, não precisam ser persistidas
@@ -50,42 +52,13 @@ export class AiService {
     };
   }
 
-  markSuggestionAsImplemented(suggestionId: string): Observable<void> {
-    const suggestions = this.suggestionsSubject.value;
-    const updatedSuggestions = suggestions.map(suggestion => 
-      suggestion.id === suggestionId 
-        ? { ...suggestion, implemented: true, implementedAt: new Date() }
-        : suggestion
-    );
-    
-    this.suggestionsSubject.next(updatedSuggestions);
-    // Sugestões são geradas dinamicamente, não precisam ser persistidas
-    return new Observable(observer => {
-      observer.next();
-      observer.complete();
-    });
-  }
-
-  dismissSuggestion(suggestionId: string): Observable<void> {
-    const suggestions = this.suggestionsSubject.value;
-    const updatedSuggestions = suggestions.filter(suggestion => suggestion.id !== suggestionId);
-    
-    this.suggestionsSubject.next(updatedSuggestions);
-    // Sugestões são geradas dinamicamente, não precisam ser persistidas
-    return new Observable(observer => {
-      observer.next();
-      observer.complete();
-    });
-  }
-
   private analyzeSpendingPatterns(expenses: Expense[], summary: ExpenseSummary): AISuggestion[] {
     const suggestions: AISuggestion[] = [];
-    const categories = ['Alimentação', 'Transporte', 'Entretenimento'];
-    const budgets = { 'Alimentação': 800, 'Transporte': 400, 'Entretenimento': 200 };
+    const budgets = this.budgetLimitService.getDefaultBudgetLimits();
 
-    for (const category of categories) {
+    for (const category of Object.keys(budgets)) {
       const spent = summary.expensesByCategory[category] || 0;
-      const budget = budgets[category as keyof typeof budgets];
+      const budget = budgets[category];
       
       if (spent > budget * 0.8) {
         suggestions.push({
@@ -97,8 +70,7 @@ export class AiService {
           priority: spent > budget ? 'high' : 'medium',
           category,
           actionRequired: `Considere reduzir gastos em ${category} pelos próximos dias.`,
-          createdAt: new Date(),
-          isImplemented: false
+          createdAt: new Date()
         });
       }
     }
@@ -119,8 +91,7 @@ export class AiService {
         impact: 1000,
         priority: 'medium',
         actionRequired: 'Crie pelo menos uma meta financeira.',
-        createdAt: new Date(),
-        isImplemented: false
+        createdAt: new Date()
       });
     }
 
@@ -134,8 +105,7 @@ export class AiService {
         impact: summary.balance * 0.1, // 10% de retorno estimado
         priority: 'medium',
         actionRequired: 'Destine parte do saldo para suas metas ou investimentos.',
-        createdAt: new Date(),
-        isImplemented: false
+        createdAt: new Date()
       });
     }
 
@@ -160,8 +130,7 @@ export class AiService {
           impact: increase,
           priority: 'high',
           actionRequired: 'Revise seus gastos recentes e identifique possíveis cortes.',
-          createdAt: new Date(),
-          isImplemented: false
+          createdAt: new Date()
         });
       }
     }
@@ -184,8 +153,7 @@ export class AiService {
         impact: total * 0.3,
         priority: 'low',
         actionRequired: 'Considere consolidar compras ou reduzir gastos impulsivos.',
-        createdAt: new Date(),
-        isImplemented: false
+        createdAt: new Date()
       });
     }
 
@@ -199,8 +167,7 @@ export class AiService {
         impact: summary.totalExpenses * 0.02, // 2% de cashback estimado
         priority: 'low',
         actionRequired: 'Instale apps como Méliuz, Ame ou similar.',
-        createdAt: new Date(),
-        isImplemented: false
+        createdAt: new Date()
       });
     }
 
@@ -262,5 +229,11 @@ export class AiService {
 
   private generateId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  }
+
+  // Método para recarregar sugestões quando dados mudarem
+  reloadSuggestions(expenses: Expense[], goals: Goal[], summary: ExpenseSummary): void {
+    // Gerar novas sugestões
+    this.generateSuggestions(expenses, goals, summary);
   }
 }

@@ -8,7 +8,6 @@ export interface AISuggestion {
   category?: string;
   actionRequired?: string;
   createdAt: Date;
-  isImplemented?: boolean;
 }
 
 export interface AIAnalysis {

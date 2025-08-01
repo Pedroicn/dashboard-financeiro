@@ -2,10 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
 import { AiService } from '../../services/ai.service';
 import { AISuggestion } from '../../models/ai.model';
@@ -17,10 +17,10 @@ import { Observable } from 'rxjs';
     CommonModule,
     MatCardModule,
     MatIconModule,
-    MatButtonModule,
     MatChipsModule,
     MatExpansionModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatSnackBarModule
   ],
   templateUrl: './ai-suggestions.component.html',
   styleUrl: './ai-suggestions.component.scss'
@@ -52,7 +52,10 @@ export class AiSuggestionsComponent implements OnInit {
     }
   };
 
-  constructor(private aiService: AiService) {
+  constructor(
+    private aiService: AiService,
+    private snackBar: MatSnackBar
+  ) {
     this.suggestions$ = this.aiService.getSuggestions();
   }
 
@@ -78,30 +81,6 @@ export class AiSuggestionsComponent implements OnInit {
         const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       });
-    });
-  }
-
-  markAsImplemented(suggestionId: string): void {
-    this.aiService.markSuggestionAsImplemented(suggestionId).subscribe({
-      next: () => {
-        // Atualizar a lista de sugestões
-        this.suggestions$ = this.aiService.getSuggestions();
-      },
-      error: (error: any) => {
-        console.error('Erro ao marcar sugestão como implementada:', error);
-      }
-    });
-  }
-
-  dismissSuggestion(suggestionId: string): void {
-    this.aiService.dismissSuggestion(suggestionId).subscribe({
-      next: () => {
-        // Atualizar a lista de sugestões
-        this.suggestions$ = this.aiService.getSuggestions();
-      },
-      error: (error: any) => {
-        console.error('Erro ao descartar sugestão:', error);
-      }
     });
   }
 
