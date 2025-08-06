@@ -26,58 +26,6 @@ Um aplicativo web moderno para controle financeiro pessoal desenvolvido com Angu
 - **SCSS** - Estilização avançada
 - **RxJS** - Programação reativa
 
-## 📋 Pré-requisitos
-
-- Node.js (versão 18 ou superior)
-- npm ou yarn
-- Conta no Firebase (gratuita)
-
-## ⚙️ Configuração do Firebase
-
-1. Acesse o [Firebase Console](https://console.firebase.google.com/)
-2. Crie um novo projeto
-3. Ative a Authentication com Email/Password
-4. No painel de configurações do projeto, adicione um app Web
-5. Copie as configurações do Firebase
-6. Substitua as configurações nos arquivos:
-   - `src/environments/environment.ts`
-   - `src/environments/environment.prod.ts`
-
-```typescript
-export const environment = {
-  production: false, // true para prod
-  firebase: {
-    apiKey: "sua-api-key",
-    authDomain: "seu-projeto.firebaseapp.com",
-    projectId: "seu-projeto-id",
-    storageBucket: "seu-projeto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "seu-app-id"
-  }
-};
-```
-
-## 🔧 Instalação
-
-1. Clone o repositório:
-```bash
-git clone [url-do-repositorio]
-cd dashboard-financeiro
-```
-
-2. Instale as dependências:
-```bash
-npm install --legacy-peer-deps
-```
-
-3. Configure o Firebase (veja seção acima)
-
-4. Execute o projeto:
-```bash
-npm start
-```
-
-5. Acesse `http://localhost:4200`
 
 ## 📱 Como Usar
 
@@ -105,40 +53,6 @@ npm start
 - Visualize sugestões automáticas para reduzir gastos
 - Implemente ou descarte sugestões
 - Acompanhe economia gerada
-
-## 🏗️ Estrutura do Projeto
-
-```
-src/
-├── app/
-│   ├── components/
-│   │   ├── auth/
-│   │   │   ├── login/
-│   │   │   └── register/
-│   │   ├── dashboard/
-│   │   ├── expense-form/
-│   │   ├── expense-list/
-│   │   ├── charts/
-│   │   ├── goals/
-│   │   ├── ai-suggestions/
-│   │   └── shared/
-│   │       └── navbar/
-│   ├── services/
-│   │   ├── auth.service.ts
-│   │   ├── expense.service.ts
-│   │   ├── goals.service.ts
-│   │   ├── ai.service.ts
-│   │   └── storage.service.ts
-│   ├── models/
-│   │   ├── user.model.ts
-│   │   ├── expense.model.ts
-│   │   ├── goal.model.ts
-│   │   └── ai.model.ts
-│   ├── guards/
-│   │   └── auth.guard.ts
-│   └── environments/
-└── ...
-```
 
 ## 🔒 Segurança
 
@@ -174,33 +88,6 @@ src/
 - Priorização por impacto financeiro
 - Feedback sobre implementação
 
-## 🧪 Testes
-
-```bash
-# Testes unitários
-npm run test
-
-# Testes e2e
-npm run e2e
-
-# Cobertura de testes
-npm run test:coverage
-```
-
-## 🚀 Deploy
-
-### Build de Produção
-```bash
-npm run build
-```
-
-### Deploy no Firebase Hosting
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting
-firebase deploy
-```
 
 ## 🤝 Contribuição
 
@@ -210,26 +97,6 @@ firebase deploy
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
-
-## 👥 Autores
-
-- **Seu Nome** - *Desenvolvimento inicial* - [SeuGitHub](https://github.com/seugithub)
-
-## 🙏 Agradecimentos
-
-- Angular Team pelos excelentes frameworks
-- Material Design pela biblioteca de componentes
-- Firebase pela infraestrutura robusta
-- Chart.js pela biblioteca de gráficos
-
-## 📧 Contato
-
-Para dúvidas ou sugestões, entre em contato:
-- Email: seu@email.com
-- LinkedIn: [Seu Perfil](https://linkedin.com/in/seuperfil)
 
 ---
 
